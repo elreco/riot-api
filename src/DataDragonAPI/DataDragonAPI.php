@@ -33,6 +33,7 @@ use RiotAPI\LeagueAPI\Objects\StaticData\StaticChampionSpellDto;
 use RiotAPI\LeagueAPI\Objects\StaticData\StaticSummonerSpellDto;
 use RiotAPI\LeagueAPI\Objects\StaticData\StaticReforgedRuneDto;
 use RiotAPI\LeagueAPI\Objects\StaticData\StaticReforgedRunePathDto;
+use RiotAPI\LeagueAPI\Objects\StaticData\StaticPerksDto;
 
 use RiotAPI\LeagueAPI\Definitions\Cache;
 
@@ -106,7 +107,8 @@ class DataDragonAPI
 		STATIC_SUMMONERSPELLS   = 'summoner',
 		STATIC_LANGUAGESTRINGS  = 'language',
 		STATIC_MAPS             = 'map',
-		STATIC_RUNESREFORGED    = 'runesReforged';
+		STATIC_RUNESREFORGED    = 'runesReforged',
+		STATIC_PERKS    		= 'perks';
 
 	/**
 	 *   Available URL fragments.
@@ -164,7 +166,7 @@ class DataDragonAPI
 	 *
 	 * @param CacheItemPoolInterface $cacheInterface
 	 */
-	public static function setCacheInterface( CacheItemPoolInterface $cacheInterface )
+	public static function setCacheInterface(CacheItemPoolInterface $cacheInterface)
 	{
 		self::$cache = $cacheInterface;
 	}
@@ -176,8 +178,7 @@ class DataDragonAPI
 	 */
 	public static function getCacheInterface()
 	{
-		if (!self::$cache)
-		{
+		if (!self::$cache) {
 			$cacheInterface = new FilesystemAdapter(
 				Cache::DATADRAGON_NAMESPACE,
 				Cache::LIFETIME,
@@ -197,7 +198,7 @@ class DataDragonAPI
 	 *
 	 * @throws RequestException
 	 */
-	public static function initByCdn( array $customSettings = [] )
+	public static function initByCdn(array $customSettings = [])
 	{
 		$data = file_get_contents("https://ddragon.leagueoflegends.com/api/versions.json");
 		if ($data == false)
@@ -224,7 +225,7 @@ class DataDragonAPI
 	 *
 	 * @throws RequestException
 	 */
-	public static function initByRegion( string $region_name, array $customSettings = [] )
+	public static function initByRegion(string $region_name, array $customSettings = [])
 	{
 		$region_name = strtolower($region_name);
 		$data = file_get_contents(self::getDataDragonUrl() . "/realms/$region_name.json");
@@ -250,7 +251,7 @@ class DataDragonAPI
 	 * @param string $version
 	 * @param array  $customSettings
 	 */
-	public static function initByVersion( string $version, array $customSettings = [] )
+	public static function initByVersion(string $version, array $customSettings = [])
 	{
 		self::setSettings([
 			self::SET_VERSION  => $version,
@@ -273,7 +274,7 @@ class DataDragonAPI
 	 * @throws LeagueExceptions\RequestException
 	 * @throws LeagueExceptions\ServerException
 	 */
-	public static function initByApi( LeagueAPI $api, array $customSettings = [] )
+	public static function initByApi(LeagueAPI $api, array $customSettings = [])
 	{
 		self::initByRealmObject($api->getStaticRealm(), $customSettings);
 	}
@@ -284,7 +285,7 @@ class DataDragonAPI
 	 * @param StaticRealmDto $realm
 	 * @param array          $customSettings
 	 */
-	public static function initByRealmObject( StaticRealmDto $realm, array $customSettings = [] )
+	public static function initByRealmObject(StaticRealmDto $realm, array $customSettings = [])
 	{
 		self::setSettings([
 			self::SET_ENDPOINT => $realm->cdn . "/",
@@ -306,7 +307,7 @@ class DataDragonAPI
 	 *
 	 * @return mixed
 	 */
-	public static function getSetting( string $name, $defaultValue = null )
+	public static function getSetting(string $name, $defaultValue = null)
 	{
 		return self::isSettingSet($name)
 			? self::$settings[$name]
@@ -319,7 +320,7 @@ class DataDragonAPI
 	 * @param string $name
 	 * @param mixed  $value
 	 */
-	public static function setSetting( string $name, $value )
+	public static function setSetting(string $name, $value)
 	{
 		self::$settings[$name] = $value;
 	}
@@ -329,7 +330,7 @@ class DataDragonAPI
 	 *
 	 * @param array $values
 	 */
-	public static function setSettings( array $values )
+	public static function setSettings(array $values)
 	{
 		foreach ($values as $name => $value)
 			self::setSetting($name, $value);
@@ -342,7 +343,7 @@ class DataDragonAPI
 	 *
 	 * @return bool
 	 */
-	public static function isSettingSet( string $name ): bool
+	public static function isSettingSet(string $name): bool
 	{
 		return isset(self::$settings[$name]) && !empty(self::$settings[$name]);
 	}
@@ -401,12 +402,38 @@ class DataDragonAPI
 	 *
 	 * @throws SettingsException
 	 */
-	public static function getStaticDataFileUrl( string $dataType, string $key = null, $locale = 'en_US', $version = null, string $fragment = null ): string
+	public static function getStaticDataFileUrl(string $dataType, string $key = null, $locale = 'en_US', $version = null, string $fragment = null): string
 	{
 		if (is_null($version))
 			self::checkInit();
 
 		return self::getCdnUrl() . ($version ?: self::getSetting(self::SET_VERSION)) . "/data/$locale/$dataType$key.json$fragment";
+	}
+
+	/**
+	 *   Returns community static-data file URL based on given type.
+	 *
+	 * @param string $dataType
+	 * @param string $key
+	 * @param string $locale
+	 * @param null $version
+	 * @param string|null $fragment
+	 *
+	 * @return string
+	 *
+	 * @throws SettingsException
+	 */
+
+	public static function getStaticDataFileCommunityUrl(string $dataType, string $key = null, $locale = 'en_US', $version = 'v1', string $fragment = null): string
+	{
+		if (is_null($version))
+			self::checkInit();
+
+		if (empty($locale) or $locale == "en_US") {
+			$locale = 'default';
+		}
+
+		return "http://raw.communitydragon.org/latest/plugins/rcp-be-lol-game-data/global/" .  strtolower($locale) . "/$version/$dataType$key.json$fragment";
 	}
 
 	/**
@@ -421,7 +448,7 @@ class DataDragonAPI
 	 *
 	 * @throws ArgumentException
 	 */
-	protected static function loadStaticData( string $url, callable $postprocess = null, bool $data_from_postprocess = false ): array
+	protected static function loadStaticData(string $url, callable $postprocess = null, bool $data_from_postprocess = false): array
 	{
 		// Try loading from cache
 		$data = self::loadCachedStaticData($url);
@@ -439,8 +466,7 @@ class DataDragonAPI
 		$data = json_decode($data, true);
 		self::saveStaticData($fragmentlessUrl, $data);
 
-		if ($postprocess)
-		{
+		if ($postprocess) {
 			$postprocess_data = $postprocess($fragmentlessUrl, $data);
 			if ($data_from_postprocess)
 				return $postprocess_data;
@@ -461,7 +487,7 @@ class DataDragonAPI
 	 *
 	 * @return array
 	 */
-	protected static function loadCachedStaticData( string $url ): CacheItemInterface
+	protected static function loadCachedStaticData(string $url): CacheItemInterface
 	{
 		$urlHash = md5($url);
 		return self::getCacheInterface()->getItem($urlHash);
@@ -471,7 +497,7 @@ class DataDragonAPI
 	 * @param string $url
 	 * @param array  $data
 	 */
-	protected static function saveStaticData( string $url, array $data )
+	protected static function saveStaticData(string $url, array $data)
 	{
 		$urlHash = md5($url);
 		$cacheInterface = self::getCacheInterface();
@@ -501,7 +527,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getProfileIconUrl( int $profile_icon_id ): string
+	public static function getProfileIconUrl(int $profile_icon_id): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/profileicon/{$profile_icon_id}.png";
@@ -516,11 +542,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getProfileIcon( int $profile_icon_id, array $attributes = [] ): Html
+	public static function getProfileIcon(int $profile_icon_id, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt' => 'Profile Icon' ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => 'Profile Icon'], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_PROFILE_ICON_CLASS),
@@ -541,7 +567,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getProfileIconO( SummonerDto $summoner, array $attributes = [] ): Html
+	public static function getProfileIconO(SummonerDto $summoner, array $attributes = []): Html
 	{
 		return self::getProfileIcon($summoner->profileIconId, $attributes);
 	}
@@ -554,7 +580,7 @@ class DataDragonAPI
 	 *
 	 * @return string
 	 */
-	public static function getProfileIconUrlByName( string $summoner_name, string $platform_id ): string
+	public static function getProfileIconUrlByName(string $summoner_name, string $platform_id): string
 	{
 		return "https://avatar.leagueoflegends.com/{$platform_id}/{$summoner_name}.png";
 	}
@@ -568,9 +594,9 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getProfileIconByName( string $summoner_name, string $platform_id, array $attributes = [] ): Html
+	public static function getProfileIconByName(string $summoner_name, string $platform_id, array $attributes = []): Html
 	{
-		$attrs = array_merge([ 'alt' => $summoner_name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => $summoner_name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_PROFILE_ICON_CLASS),
@@ -595,7 +621,7 @@ class DataDragonAPI
 	 *
 	 * @return string
 	 */
-	public static function getChampionSplashUrl( string $champion_name, int $skin = 0 ): string
+	public static function getChampionSplashUrl(string $champion_name, int $skin = 0): string
 	{
 		return self::getSetting(self::SET_ENDPOINT) . "img/champion/splash/{$champion_name}_{$skin}.jpg";
 	}
@@ -609,9 +635,9 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getChampionSplash( string $champion_name, int $skin = 0, array $attributes = [] ): Html
+	public static function getChampionSplash(string $champion_name, int $skin = 0, array $attributes = []): Html
 	{
-		$attrs = array_merge([ 'alt' => $champion_name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => $champion_name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_CHAMP_SPLASH_CLASS),
@@ -632,7 +658,7 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getChampionSplashO( StaticChampionDto $champion, int $skin = 0, array $attributes = [] ): Html
+	public static function getChampionSplashO(StaticChampionDto $champion, int $skin = 0, array $attributes = []): Html
 	{
 		return self::getChampionSplash($champion->id, $skin, $attributes);
 	}
@@ -650,7 +676,7 @@ class DataDragonAPI
 	 *
 	 * @return string
 	 */
-	public static function getChampionLoadingUrl( string $champion_name, int $skin = 0 ): string
+	public static function getChampionLoadingUrl(string $champion_name, int $skin = 0): string
 	{
 		return self::getSetting(self::SET_ENDPOINT) . "img/champion/loading/{$champion_name}_{$skin}.jpg";
 	}
@@ -664,9 +690,9 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getChampionLoading( string $champion_name, int $skin = 0, array $attributes = [] ): Html
+	public static function getChampionLoading(string $champion_name, int $skin = 0, array $attributes = []): Html
 	{
-		$attrs = array_merge([ 'alt' => $champion_name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => $champion_name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_CHAMP_LOADING_CLASS),
@@ -688,7 +714,7 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getChampionLoadingO( StaticChampionDto $champion, int $skin = 0, array $attributes = [] ): Html
+	public static function getChampionLoadingO(StaticChampionDto $champion, int $skin = 0, array $attributes = []): Html
 	{
 		return self::getChampionLoading($champion->id, $skin, $attributes);
 	}
@@ -706,7 +732,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getChampionIconUrl( string $champion_name ): string
+	public static function getChampionIconUrl(string $champion_name): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/champion/{$champion_name}.png";
@@ -721,11 +747,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getChampionIcon( string $champion_name, array $attributes = [] ): Html
+	public static function getChampionIcon(string $champion_name, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt' => $champion_name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => $champion_name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_CHAMP_ICON_CLASS),
@@ -746,7 +772,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getChampionIconO( StaticChampionDto $champion, array $attributes = [] ): Html
+	public static function getChampionIconO(StaticChampionDto $champion, array $attributes = []): Html
 	{
 		return self::getChampionIcon($champion->id, $attributes);
 	}
@@ -769,11 +795,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getFromSprite( string $source, int $x, int $y, int $w = 48, int $h = 48, array $attributes = [] ): Html
+	public static function getFromSprite(string $source, int $x, int $y, int $w = 48, int $h = 48, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt' => 'Sprite Icon' ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => 'Sprite Icon'], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_SPRITE_CLASS),
@@ -782,7 +808,7 @@ class DataDragonAPI
 		]);
 		$attrs['style'] = 'background: transparent url(' . self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/sprite/{$source}" . ") -{$x}px -{$y}px; width: {$w}px; height: {$h}px;";
 		$attrs['src'] = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
-		
+
 		return Html::el('img', $attrs);
 	}
 
@@ -795,7 +821,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getFromSpriteO( StaticImageDto $image, array $attributes = [] ): Html
+	public static function getFromSpriteO(StaticImageDto $image, array $attributes = []): Html
 	{
 		return self::getFromSprite($image->sprite, $image->x, $image->y, $image->w, $image->h, $attributes);
 	}
@@ -813,7 +839,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getSpellIconUrl( string $spell_name ): string
+	public static function getSpellIconUrl(string $spell_name): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/spell/{$spell_name}.png";
@@ -827,7 +853,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getPassiveIconUrl( string $image_name ): string
+	public static function getPassiveIconUrl(string $image_name): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/passive/{$image_name}.png";
@@ -842,11 +868,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getSpellIcon( string $spell_name, array $attributes = [] ): Html
+	public static function getSpellIcon(string $spell_name, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt'   => $spell_name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $spell_name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_SPELL_ICON_CLASS),
@@ -868,7 +894,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getSummonerSpellIconO( StaticSummonerSpellDto $summonerSpell, array $attributes = [] ): Html
+	public static function getSummonerSpellIconO(StaticSummonerSpellDto $summonerSpell, array $attributes = []): Html
 	{
 		return self::getSpellIcon($summonerSpell->id, $attributes);
 	}
@@ -883,7 +909,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getChampionSpellIconO( StaticChampionSpellDto $championSpell, array $attributes = [] ): Html
+	public static function getChampionSpellIconO(StaticChampionSpellDto $championSpell, array $attributes = []): Html
 	{
 		return self::getSpellIcon($championSpell->id, $attributes);
 	}
@@ -902,11 +928,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getChampionPassiveIcon( $image_name, array $attributes = [] ): Html
+	public static function getChampionPassiveIcon($image_name, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt'   => $image_name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $image_name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_SPELL_ICON_CLASS),
@@ -928,10 +954,9 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getChampionPassiveIconO( StaticChampionDto $champion, array $attributes = [] ): Html
+	public static function getChampionPassiveIconO(StaticChampionDto $champion, array $attributes = []): Html
 	{
-		if (is_null($champion->passive))
-		{
+		if (is_null($champion->passive)) {
 			trigger_error("Extended champion static data are required for this function to work.");
 			return Html::el("p")->setHtml("This <code>StaticChampionDto</code> instance does not contain required data. Extended data are required.");
 		}
@@ -954,7 +979,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getItemIconUrl( int $item_id ): string
+	public static function getItemIconUrl(int $item_id): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/item/{$item_id}.png";
@@ -969,11 +994,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getItemIcon( int $item_id, array $attributes = [] ): Html
+	public static function getItemIcon(int $item_id, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt'   => $item_id ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $item_id], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_ITEM_ICON_CLASS),
@@ -994,7 +1019,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getItemIconO( StaticItemDto $item, array $attributes = [] ): Html
+	public static function getItemIconO(StaticItemDto $item, array $attributes = []): Html
 	{
 		return self::getItemIcon($item->id, $attributes);
 	}
@@ -1012,7 +1037,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getMasteryIconUrl( int $mastery_id ): string
+	public static function getMasteryIconUrl(int $mastery_id): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/mastery/{$mastery_id}.png";
@@ -1027,11 +1052,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getMasteryIcon( int $mastery_id, array $attributes = [] ): Html
+	public static function getMasteryIcon(int $mastery_id, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt'   => $mastery_id ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $mastery_id], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_MASTERY_ICON_CLASS),
@@ -1052,7 +1077,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getMasteryIconO( StaticMasteryDto $mastery, array $attributes = [] ): Html
+	public static function getMasteryIconO(StaticMasteryDto $mastery, array $attributes = []): Html
 	{
 		return self::getMasteryIcon($mastery->id, $attributes);
 	}
@@ -1070,7 +1095,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getRuneIconUrl( int $rune_id ): string
+	public static function getRuneIconUrl(int $rune_id): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/rune/{$rune_id}.png";
@@ -1085,11 +1110,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getRuneIcon( int $rune_id, array $attributes = [] ): Html
+	public static function getRuneIcon(int $rune_id, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt'   => $rune_id ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $rune_id], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_RUNE_ICON_CLASS),
@@ -1110,7 +1135,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getRuneIconO( StaticRuneDto $rune, array $attributes = [] ): Html
+	public static function getRuneIconO(StaticRuneDto $rune, array $attributes = []): Html
 	{
 		return self::getRuneIcon($rune->id, $attributes);
 	}
@@ -1127,7 +1152,7 @@ class DataDragonAPI
 	 *
 	 * @return string
 	 */
-	public static function getReforgedRuneIconUrlO( StaticReforgedRuneDto $rune ): string
+	public static function getReforgedRuneIconUrlO(StaticReforgedRuneDto $rune): string
 	{
 		return self::getSetting(self::SET_ENDPOINT) . "img/$rune->icon";
 	}
@@ -1141,9 +1166,9 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getReforgedRuneIconO( StaticReforgedRuneDto $rune, array $attributes = [] ): Html
+	public static function getReforgedRuneIconO(StaticReforgedRuneDto $rune, array $attributes = []): Html
 	{
-		$attrs = array_merge([ 'alt'   => $rune->name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $rune->name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_REFORGED_RUNE_ICON_CLASS),
@@ -1162,7 +1187,7 @@ class DataDragonAPI
 	 *
 	 * @return string
 	 */
-	public static function getReforgedRunePathIconUrlO( StaticReforgedRunePathDto $runePath ): string
+	public static function getReforgedRunePathIconUrlO(StaticReforgedRunePathDto $runePath): string
 	{
 		return self::getSetting(self::SET_ENDPOINT) . "img/$runePath->icon";
 	}
@@ -1176,9 +1201,9 @@ class DataDragonAPI
 	 *
 	 * @return Html
 	 */
-	public static function getReforgedRunePathIconO( StaticReforgedRunePathDto $runePath, array $attributes = [] ): Html
+	public static function getReforgedRunePathIconO(StaticReforgedRunePathDto $runePath, array $attributes = []): Html
 	{
-		$attrs = array_merge([ 'alt'   => $runePath->name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt'   => $runePath->name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_REFORGED_RUNE_ICON_CLASS),
@@ -1186,6 +1211,43 @@ class DataDragonAPI
 			@$attributes['class'],
 		]);
 		$attrs['src'] = self::getReforgedRunePathIconUrlO($runePath);
+
+		return Html::el('img', $attrs);
+	}
+
+	/**
+	 *   Returns reforged rune path icon URL.
+	 *
+	 * @param StaticPerksDto $runePath
+	 *
+	 * @return string
+	 */
+	public static function getPerkPathIconUrlO(StaticPerksDto $runePath): string
+	{
+		/* $iconPath = strtolower(str_replace('/lol-game-data/assets/v1/', '', $runePath->iconPath)); */
+		$iconPath = $runePath->iconPath;
+		return self::getSetting(self::SET_ENDPOINT) . "img/$iconPath";
+	}
+
+	/**
+	 *   Returns reforged rune path from API static-data ReforgedRunePath
+	 * object in img HTML TAG.
+	 *
+	 * @param StaticPerksDto $runePath
+	 * @param array                     $attributes
+	 *
+	 * @return Html
+	 */
+	public static function getPerkPathIconO(StaticPerksDto $runePath, array $attributes = []): Html
+	{
+		$attrs = array_merge(['alt'   => $runePath->name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs['class'] = implode(' ', [
+			self::getSetting(self::SET_DEFAULT_CLASS),
+			self::getSetting(self::SET_REFORGED_RUNE_ICON_CLASS),
+			@self::getSetting(self::SET_CUSTOM_IMG_ATTRS, [])['class'],
+			@$attributes['class'],
+		]);
+		$attrs['src'] = self::getPerkPathIconUrlO($runePath);
 
 		return Html::el('img', $attrs);
 	}
@@ -1203,7 +1265,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getMinimapUrl( int $map_id ): string
+	public static function getMinimapUrl(int $map_id): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/map/map{$map_id}.png";
@@ -1218,11 +1280,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getMinimap( int $map_id, array $attributes = [] ): Html
+	public static function getMinimap(int $map_id, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt' => $map_id ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => $map_id], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_MINIMAP_CLASS),
@@ -1243,7 +1305,7 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getMinimapO( StaticMapDetailsDto $mapDetails, array $attributes = [] ): Html
+	public static function getMinimapO(StaticMapDetailsDto $mapDetails, array $attributes = []): Html
 	{
 		return self::getMinimap($mapDetails->mapId, $attributes);
 	}
@@ -1261,7 +1323,7 @@ class DataDragonAPI
 	 * @return string
 	 * @throws SettingsException
 	 */
-	public static function getScoreboardIconUrl( string $name ): string
+	public static function getScoreboardIconUrl(string $name): string
 	{
 		self::checkInit();
 		return self::getSetting(self::SET_ENDPOINT) . self::getSetting(self::SET_VERSION) . "/img/ui/{$name}.png";
@@ -1276,11 +1338,11 @@ class DataDragonAPI
 	 * @return Html
 	 * @throws SettingsException
 	 */
-	public static function getScoreboardIcon( string $name, array $attributes = [] ): Html
+	public static function getScoreboardIcon(string $name, array $attributes = []): Html
 	{
 		self::checkInit();
 
-		$attrs = array_merge([ 'alt' => $name ], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
+		$attrs = array_merge(['alt' => $name], self::getSetting(self::SET_CUSTOM_IMG_ATTRS, []), $attributes);
 		$attrs['class'] = implode(' ', [
 			self::getSetting(self::SET_DEFAULT_CLASS),
 			self::getSetting(self::SET_UI_ICON_CLASS),
@@ -1305,7 +1367,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticChampions( string $locale = 'en_US', string $version = null, bool $data_by_key = false ) : array
+	public static function getStaticChampions(string $locale = 'en_US', string $version = null, bool $data_by_key = false): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_CHAMPIONS, null, $locale, $version, $data_by_key ? self::STATIC_CHAMPION_BY_KEY : null);
 		return self::loadStaticData($url, [DataDragonAPI::class, "_champion"], $data_by_key);
@@ -1320,7 +1382,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticChampionDetails( string $champion_id, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticChampionDetails(string $champion_id, string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_CHAMPION, $champion_id, $locale, $version);
 		return self::loadStaticData($url);
@@ -1337,7 +1399,7 @@ class DataDragonAPI
 	 *
 	 * @see getStaticChampion
 	 */
-	public static function getStaticChampionById( string $champion_id, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticChampionById(string $champion_id, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticChampions($locale, $version);
 		if (isset($data['data'][$champion_id]) == false)
@@ -1357,7 +1419,7 @@ class DataDragonAPI
 	 *
 	 * @see getStaticChampion
 	 */
-	public static function getStaticChampionByKey( int $champion_key, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticChampionByKey(int $champion_key, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticChampions($locale, $version, true);
 		if (isset($data['data'][$champion_key]) == false)
@@ -1374,7 +1436,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticItems( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticItems(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_ITEMS, null, $locale, $version);
 		return self::loadStaticData($url);
@@ -1389,7 +1451,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticItem( int $item_id, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticItem(int $item_id, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticItems($locale, $version);
 		if (isset($data['data'][$item_id]) == false)
@@ -1406,7 +1468,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticLanguageStrings( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticLanguageStrings(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_LANGUAGESTRINGS, null, $locale, $version);
 		return self::loadStaticData($url);
@@ -1416,7 +1478,7 @@ class DataDragonAPI
 	 * @return array
 	 * @throws ArgumentException
 	 */
-	public static function getStaticLanguages() : array
+	public static function getStaticLanguages(): array
 	{
 		$url = self::getCdnUrl() . "languages.json";
 		return self::loadStaticData($url);
@@ -1430,7 +1492,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticMaps( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticMaps(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_MAPS, null, $locale, $version);
 		return self::loadStaticData($url);
@@ -1444,7 +1506,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticMasteries( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticMasteries(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_MASTERIES, null, $locale, $version);
 		return self::loadStaticData($url);
@@ -1459,7 +1521,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticMastery( int $mastery_id, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticMastery(int $mastery_id, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticMasteries($locale, $version);
 		if (isset($data['data'][$mastery_id]) == false)
@@ -1476,7 +1538,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticRunes( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticRunes(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_RUNES, null, $locale, $version);
 		return self::loadStaticData($url);
@@ -1491,7 +1553,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticRune( int $rune_id, string $locale = 'en_US', string $version = null) : array
+	public static function getStaticRune(int $rune_id, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticRunes($locale, $version);
 		if (isset($data['data'][$rune_id]) == false)
@@ -1508,7 +1570,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticProfileIcons( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticProfileIcons(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_PROFILEICONS, null, $locale, $version);
 		return self::loadStaticData($url);
@@ -1520,7 +1582,7 @@ class DataDragonAPI
 	 * @return array
 	 * @throws ArgumentException
 	 */
-	public static function getStaticRealms( string $region ) : array
+	public static function getStaticRealms(string $region): array
 	{
 		$region = strtolower($region);
 		$url = self::getDataDragonUrl() . "/realms/$region.json";
@@ -1535,9 +1597,23 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticReforgedRunes( string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticReforgedRunes(string $locale = 'en_US', string $version = null): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_RUNESREFORGED, null, $locale, $version);
+		return self::loadStaticData($url);
+	}
+
+	/**
+	 * @param string      $locale
+	 * @param string|null $version
+	 *
+	 * @return array
+	 * @throws ArgumentException
+	 * @throws SettingsException
+	 */
+	public static function getStaticPerks(string $locale = 'en_US', string $version = 'v1'): array
+	{
+		$url = self::getStaticDataFileCommunityUrl(self::STATIC_PERKS, null, $locale);
 		return self::loadStaticData($url);
 	}
 
@@ -1550,7 +1626,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticSummonerSpells( string $locale = 'en_US', string $version = null, bool $data_by_key = false ) : array
+	public static function getStaticSummonerSpells(string $locale = 'en_US', string $version = null, bool $data_by_key = false): array
 	{
 		$url = self::getStaticDataFileUrl(self::STATIC_SUMMONERSPELLS, null, $locale, $version, $data_by_key ? self::STATIC_SUMMONERSPELLS_BY_KEY : null);
 		return self::loadStaticData($url, [DataDragonAPI::class, "_summonerSpell"], $data_by_key);
@@ -1565,7 +1641,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticSummonerSpell( string $summonerspell_key, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticSummonerSpell(string $summonerspell_key, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticSummonerSpells($locale, $version);
 		if (isset($data['data'][$summonerspell_key]) == false)
@@ -1583,7 +1659,7 @@ class DataDragonAPI
 	 * @throws ArgumentException
 	 * @throws SettingsException
 	 */
-	public static function getStaticSummonerSpellByKey( int $summonerspell_key, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticSummonerSpellByKey(int $summonerspell_key, string $locale = 'en_US', string $version = null): array
 	{
 		return self::getStaticSummonerSpell($summonerspell_key, $locale, $version);
 	}
@@ -1599,7 +1675,7 @@ class DataDragonAPI
 	 *
 	 * @see getStaticSummonerSpell
 	 */
-	public static function getStaticSummonerSpellById( string $summonerspell_id, string $locale = 'en_US', string $version = null ) : array
+	public static function getStaticSummonerSpellById(string $summonerspell_id, string $locale = 'en_US', string $version = null): array
 	{
 		$data = self::getStaticSummonerSpells($locale, $version, true);
 		if (isset($data['data'][$summonerspell_id]) == false)
@@ -1612,7 +1688,7 @@ class DataDragonAPI
 	 * @return array
 	 * @throws ArgumentException
 	 */
-	public static function getStaticVersions() : array
+	public static function getStaticVersions(): array
 	{
 		$url = self::getDataDragonUrl() . "/api/versions.json";
 		return self::loadStaticData($url);
@@ -1631,14 +1707,14 @@ class DataDragonAPI
 	 *
 	 * @internal
 	 */
-	protected static function _summonerSpell( string $url, array $data )
+	protected static function _summonerSpell(string $url, array $data)
 	{
 		$url .= self::STATIC_SUMMONERSPELLS_BY_KEY;
 		$data_by_key = $data;
 		$data_by_key['data'] = [];
 
-		array_walk($data['data'], function( $d ) use (&$data_by_key) {
-			$data_by_key['data'][(int)$d['key']] = $d;
+		array_walk($data['data'], function ($d) use (&$data_by_key) {
+			$data_by_key['data'][(int) $d['key']] = $d;
 		});
 
 		self::saveStaticData($url, $data_by_key);
@@ -1653,14 +1729,14 @@ class DataDragonAPI
 	 *
 	 * @internal
 	 */
-	protected static function _champion( string $url, array $data )
+	protected static function _champion(string $url, array $data)
 	{
 		$url .= self::STATIC_CHAMPION_BY_KEY;
 		$data_by_key = $data;
 		$data_by_key['data'] = [];
 
-		array_walk($data['data'], function( $d ) use (&$data_by_key) {
-			$data_by_key['data'][(int)$d['key']] = $d;
+		array_walk($data['data'], function ($d) use (&$data_by_key) {
+			$data_by_key['data'][(int) $d['key']] = $d;
 		});
 
 		self::saveStaticData($url, $data_by_key);
