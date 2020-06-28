@@ -1224,7 +1224,7 @@ class DataDragonAPI
 	 */
 	public static function getPerkPathIconUrlO(StaticPerksDto $runePath): string
 	{
-		$iconPath = strtolower(str_replace('/lol-game-data/assets/v1/', '', $runePath->iconPath));
+		$iconPath = str_replace('/lol-game-data/assets/v1/', '', $runePath->iconPath);
 		/* $iconPath = $runePath->iconPath; */
 		return self::getSetting(self::SET_ENDPOINT) . "img/$iconPath";
 	}
