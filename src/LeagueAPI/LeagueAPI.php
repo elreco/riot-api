@@ -2213,7 +2213,7 @@ class LeagueAPI
 	 */
 	public function getStaticPerks(string $locale = 'en_US', string $version = 'v1'): StaticData\StaticPerksList
 	{
-		$result = $this->_makeStaticCall("RiotAPI\\DataDragonAPI\\DataDragonAPI::getStaticPerks");
+		$result = $this->_makeStaticCall("RiotAPI\\DataDragonAPI\\DataDragonAPI::getStaticPerks", $locale, $version);
 
 		// Create missing data
 		$r = [];
