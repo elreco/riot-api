@@ -108,7 +108,8 @@ class DataDragonAPI
 		STATIC_LANGUAGESTRINGS  = 'language',
 		STATIC_MAPS             = 'map',
 		STATIC_RUNESREFORGED    = 'runesReforged',
-		STATIC_PERKS    		= 'perks';
+		STATIC_PERKS    		= 'perks',
+		QUEUES			  		= 'queues';
 
 	/**
 	 *   Available URL fragments.
@@ -1614,6 +1615,20 @@ class DataDragonAPI
 	public static function getStaticPerks(string $locale = 'en_US', string $version = 'v1'): array
 	{
 		$url = self::getStaticDataFileCommunityUrl(self::STATIC_PERKS, null, $locale);
+		return self::loadStaticData($url);
+	}
+
+	/**
+	 * @param string      $locale
+	 * @param string|null $version
+	 *
+	 * @return array
+	 * @throws ArgumentException
+	 * @throws SettingsException
+	 */
+	public static function getQueues(string $locale = 'en_US', string $version = 'v1'): array
+	{
+		$url = self::getStaticDataFileCommunityUrl(self::QUEUES, null, $locale);
 		return self::loadStaticData($url);
 	}
 
