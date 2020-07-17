@@ -251,6 +251,8 @@ class LeagueAPI
 			self::SET_CALLBACKS_AFTER,
 			self::SET_API_BASEURL,
 			self::SET_DEBUG,
+			self::SET_PER_MINUTE_REQUESTS,
+			self::SET_PER_SECOND_REQUESTS,
 		],
 		SETTINGS_INIT_ONLY = [
 			self::SET_API_BASEURL,
@@ -259,8 +261,6 @@ class LeagueAPI
 			self::SET_CACHE_PROVIDER,
 			self::SET_CACHE_PROVIDER_PARAMS,
 			self::SET_DD_CACHE_PROVIDER_PARAMS,
-			self::SET_PER_MINUTE_REQUESTS,
-			self::SET_PER_SECOND_REQUESTS,
 		];
 
 	/**
@@ -437,8 +437,8 @@ class LeagueAPI
 
 		// TODO: Guzzle Client settings?
 		$stack = HandlerStack::create();
-		$stack->push(RateLimiterMiddleware::perSecond(self::SET_PER_SECOND_REQUESTS));
-		$stack->push(RateLimiterMiddleware::perMinute(self::SET_PER_MINUTE_REQUESTS));
+		$stack->push(RateLimiterMiddleware::perSecond($this->getSetting(self::SET_PER_SECOND_REQUESTS)));
+		$stack->push(RateLimiterMiddleware::perMinute($this->getSetting(self::SET_PER_MINUTE_REQUESTS)));
 		$this->guzzle = new Client([
 			'handler' => $stack,
 		]);
