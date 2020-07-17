@@ -58,6 +58,8 @@ use GuzzleHttp\Promise\PromiseInterface;
 use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Exception as GuzzleHttpExceptions;
 use function GuzzleHttp\Promise\settle;
+use GuzzleHttp\HandlerStack;
+use Spatie\GuzzleRateLimiterMiddleware\RateLimiterMiddleware;
 
 use Nette\Utils\DateTime;
 use Psr\Cache\CacheItemPoolInterface;
@@ -423,7 +425,12 @@ class LeagueAPI
 			: new Platform();
 
 		// TODO: Guzzle Client settings?
-		$this->guzzle = new Client();
+		$stack = HandlerStack::create();
+		$stack->push(RateLimiterMiddleware::perSecond(20));
+		$stack->push(RateLimiterMiddleware::perMinute(50));
+		$this->guzzle = new Client([
+			'handler' => $stack,
+		]);
 
 		$this->_setupDefaultCacheProviderSettings();
 
@@ -1020,7 +1027,9 @@ class LeagueAPI
 		$client = @$this->async_clients[$group];
 		if (!$client)
 			//  TODO: Guzzle Client settings?
-			$this->async_clients[$group] = $client = new Client();
+			$this->async_clients[$group] = $client = new Client([
+			'handler' => $stack,
+		]);
 
 		$this->async_requests[$group][] = $this->next_async_request = new AsyncRequest($client);
 		$this->next_async_request->onFulfilled = $onFulfilled;
