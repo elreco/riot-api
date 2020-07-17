@@ -1027,9 +1027,7 @@ class LeagueAPI
 		$client = @$this->async_clients[$group];
 		if (!$client)
 			//  TODO: Guzzle Client settings?
-			$this->async_clients[$group] = $client = new Client([
-			'handler' => $stack,
-		]);
+			$this->async_clients[$group] = $client = new Client();
 
 		$this->async_requests[$group][] = $this->next_async_request = new AsyncRequest($client);
 		$this->next_async_request->onFulfilled = $onFulfilled;
