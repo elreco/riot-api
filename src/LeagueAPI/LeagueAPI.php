@@ -1,8 +1,9 @@
 <?php
 
 /**
-																														 * Copyright (C) 2016-2020  Daniel Dolejška
-																 *
+		 * Copyright (C) 2016-2020  Daniel Dolejška
+		 *
+
 																 * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, either version 3 of the License, or
@@ -105,6 +106,10 @@ class LeagueAPI
 		SET_CACHE_PROVIDER_PARAMS    = 'SET_CACHE_PROVIDER_PARAMS',
 		/** Specifies parameters passed to CacheProvider class when initializing **/
 		SET_DD_CACHE_PROVIDER_PARAMS = 'SET_DD_CACHE_PROVIDER_PARAMS',
+		/** Specifies parameters passed to CacheProvider class when initializing **/
+		SET_PER_SECOND_REQUESTS = 'SET_PER_SECOND_REQUESTS',
+		/** Specifies parameters passed to CacheProvider class when initializing **/
+		SET_PER_MINUTE_REQUESTS = 'SET_PER_MINUTE_REQUESTS',
 		/** Specifies parameters passed to DataDragonAPI CacheProvider class when initializing **/
 		SET_CACHE_RATELIMIT          = 'SET_CACHE_RATELIMIT',
 		/** Used to set whether or not to saveCallData and check API key's rate limit **/
@@ -229,6 +234,8 @@ class LeagueAPI
 			self::SET_CACHE_PROVIDER,
 			self::SET_CACHE_PROVIDER_PARAMS,
 			self::SET_DD_CACHE_PROVIDER_PARAMS,
+			self::SET_PER_MINUTE_REQUESTS,
+			self::SET_PER_SECOND_REQUESTS,
 			self::SET_CACHE_RATELIMIT,
 			self::SET_CACHE_CALLS,
 			self::SET_CACHE_CALLS_LENGTH,
@@ -252,6 +259,8 @@ class LeagueAPI
 			self::SET_CACHE_PROVIDER,
 			self::SET_CACHE_PROVIDER_PARAMS,
 			self::SET_DD_CACHE_PROVIDER_PARAMS,
+			self::SET_PER_MINUTE_REQUESTS,
+			self::SET_PER_SECOND_REQUESTS,
 		];
 
 	/**
@@ -286,6 +295,8 @@ class LeagueAPI
 		self::SET_SAVE_DUMMY_DATA  => false,
 		self::SET_VERIFY_SSL       => true,
 		self::SET_DEBUG            => false,
+		self::SET_PER_MINUTE_REQUESTS => 50,
+		self::SET_PER_SECOND_REQUESTS => 20,
 	);
 
 	/** @var IRegion $regions */
@@ -426,8 +437,8 @@ class LeagueAPI
 
 		// TODO: Guzzle Client settings?
 		$stack = HandlerStack::create();
-		$stack->push(RateLimiterMiddleware::perSecond(20));
-		$stack->push(RateLimiterMiddleware::perMinute(50));
+		$stack->push(RateLimiterMiddleware::perSecond(self::SET_PER_SECOND_REQUESTS));
+		$stack->push(RateLimiterMiddleware::perMinute(self::SET_PER_MINUTE_REQUESTS));
 		$this->guzzle = new Client([
 			'handler' => $stack,
 		]);
