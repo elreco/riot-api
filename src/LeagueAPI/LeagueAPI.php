@@ -445,7 +445,7 @@ class LeagueAPI
 
 		// Max 1 request per second
 		$maxRequests = 1;
-		$durationInSeconds = 1;
+		$durationInSeconds = 2;
 		$middleware->registerConfiguration(
 			new ThrottleConfiguration(new RequestMatcher(), $maxRequests, $durationInSeconds, 'example')
 		);
