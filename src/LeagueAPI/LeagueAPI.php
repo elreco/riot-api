@@ -60,7 +60,11 @@ use GuzzleHttp\Promise\FulfilledPromise;
 use GuzzleHttp\Exception as GuzzleHttpExceptions;
 use function GuzzleHttp\Promise\settle;
 use GuzzleHttp\HandlerStack;
-use Spatie\GuzzleRateLimiterMiddleware\RateLimiterMiddleware;
+use BenTools\GuzzleHttp\Middleware\Storage\Adapter\ArrayAdapter;
+use BenTools\GuzzleHttp\Middleware\ThrottleConfiguration;
+use BenTools\GuzzleHttp\Middleware\ThrottleMiddleware;
+use RiotAPI\LeagueAPI\Utils\RequestMatcher;
+/* use Spatie\GuzzleRateLimiterMiddleware\RateLimiterMiddleware; */
 
 use Nette\Utils\DateTime;
 use Psr\Cache\CacheItemPoolInterface;
@@ -437,8 +441,17 @@ class LeagueAPI
 
 		// TODO: Guzzle Client settings?
 		$stack = HandlerStack::create();
-		$stack->push(RateLimiterMiddleware::perSecond($this->getSetting(self::SET_PER_SECOND_REQUESTS)));
-		$stack->push(RateLimiterMiddleware::perMinute($this->getSetting(self::SET_PER_MINUTE_REQUESTS)));
+		$middleware = new ThrottleMiddleware(new ArrayAdapter());
+
+		// Max 1 request per second
+		$maxRequests = 1;
+		$durationInSeconds = 1;
+		$middleware->registerConfiguration(
+			new ThrottleConfiguration(new RequestMatcher(), $maxRequests, $durationInSeconds, 'example')
+		);
+
+		$stack->push($middleware, 'throttle');
+		/* $stack->push(RateLimiterMiddleware::perMinute($this->getSetting(self::SET_PER_MINUTE_REQUESTS))); */
 		$this->guzzle = new Client([
 			'handler' => $stack,
 		]);

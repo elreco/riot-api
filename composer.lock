@@ -4,8 +4,100 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5dfbe70bcd5ad4b32e87d5d6a8362ec7",
+    "content-hash": "d7af141ebdb0527aaab02a972909bd77",
     "packages": [
+        {
+            "name": "bentools/guzzle-throttle-middleware",
+            "version": "0.4.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bpolaszek/guzzle-throttle-middleware.git",
+                "reference": "81de5e31843f99a99acf88628e5b154580172670"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bpolaszek/guzzle-throttle-middleware/zipball/81de5e31843f99a99acf88628e5b154580172670",
+                "reference": "81de5e31843f99a99acf88628e5b154580172670",
+                "shasum": ""
+            },
+            "require": {
+                "bentools/psr7-request-matcher": "^1.0",
+                "guzzlehttp/guzzle": "^6.0",
+                "php": ">=7.0",
+                "psr/log": "^1.0"
+            },
+            "require-dev": {
+                "bentools/guzzle-duration-middleware": "^1.0",
+                "phpunit/phpunit": "@stable",
+                "psr/cache": "^1.0",
+                "satooshi/php-coveralls": "@stable",
+                "squizlabs/php_codesniffer": "@stable",
+                "symfony/cache": "^3.3",
+                "symfony/var-dumper": "^3.3"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BenTools\\GuzzleHttp\\Middleware\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "bpolaszek",
+                    "email": "bpolaszek@gmail.com"
+                }
+            ],
+            "description": "A GuzzleHTTP Middleware that can delay requests before sending them.",
+            "time": "2018-02-16T13:49:05+00:00"
+        },
+        {
+            "name": "bentools/psr7-request-matcher",
+            "version": "1.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/bpolaszek/psr7-request-matcher.git",
+                "reference": "bf7db07be3474586a948fc52dee1214c67915552"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/bpolaszek/psr7-request-matcher/zipball/bf7db07be3474586a948fc52dee1214c67915552",
+                "reference": "bf7db07be3474586a948fc52dee1214c67915552",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3",
+                "psr/http-message": "^1.0"
+            },
+            "require-dev": {
+                "guzzlehttp/psr7": "^1.4",
+                "php": ">=5.4",
+                "phpunit/phpunit": "@stable",
+                "satooshi/php-coveralls": "@stable",
+                "squizlabs/php_codesniffer": "@stable"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "BenTools\\Psr7\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "bpolaszek",
+                    "email": "bpolaszek@gmail.com"
+                }
+            ],
+            "description": "A PSR-7 RequestMatcher interface for use into several projects.",
+            "time": "2018-03-07T10:54:11+00:00"
+        },
         {
             "name": "guzzlehttp/guzzle",
             "version": "6.5.2",
@@ -630,6 +722,20 @@
                 "caching",
                 "psr6"
             ],
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
             "time": "2020-02-20T16:31:44+00:00"
         },
         {
@@ -764,6 +870,20 @@
             ],
             "description": "Symfony Console Component",
             "homepage": "https://symfony.com",
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
             "time": "2020-02-24T13:10:00+00:00"
         },
         {
@@ -2531,5 +2651,6 @@
         "php": ">=7.1",
         "ext-json": "*"
     },
-    "platform-dev": []
+    "platform-dev": [],
+    "plugin-api-version": "1.1.0"
 }
