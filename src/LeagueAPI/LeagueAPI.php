@@ -111,9 +111,9 @@ class LeagueAPI
 		/** Specifies parameters passed to CacheProvider class when initializing **/
 		SET_DD_CACHE_PROVIDER_PARAMS = 'SET_DD_CACHE_PROVIDER_PARAMS',
 		/** Specifies parameters passed to CacheProvider class when initializing **/
-		SET_PER_SECOND_REQUESTS = 'SET_PER_SECOND_REQUESTS',
+		SET_MAX_REQUESTS = 'SET_MAX_REQUESTS',
 		/** Specifies parameters passed to CacheProvider class when initializing **/
-		SET_PER_MINUTE_REQUESTS = 'SET_PER_MINUTE_REQUESTS',
+		SET_DURATION_IN_SECONDS = 'SET_DURATION_IN_SECONDS',
 		/** Specifies parameters passed to DataDragonAPI CacheProvider class when initializing **/
 		SET_CACHE_RATELIMIT          = 'SET_CACHE_RATELIMIT',
 		/** Used to set whether or not to saveCallData and check API key's rate limit **/
@@ -238,8 +238,6 @@ class LeagueAPI
 			self::SET_CACHE_PROVIDER,
 			self::SET_CACHE_PROVIDER_PARAMS,
 			self::SET_DD_CACHE_PROVIDER_PARAMS,
-			self::SET_PER_MINUTE_REQUESTS,
-			self::SET_PER_SECOND_REQUESTS,
 			self::SET_CACHE_RATELIMIT,
 			self::SET_CACHE_CALLS,
 			self::SET_CACHE_CALLS_LENGTH,
@@ -255,8 +253,8 @@ class LeagueAPI
 			self::SET_CALLBACKS_AFTER,
 			self::SET_API_BASEURL,
 			self::SET_DEBUG,
-			self::SET_PER_MINUTE_REQUESTS,
-			self::SET_PER_SECOND_REQUESTS,
+			self::SET_MAX_REQUESTS,
+			self::SET_DURATION_IN_SECONDS,
 		],
 		SETTINGS_INIT_ONLY = [
 			self::SET_API_BASEURL,
@@ -299,8 +297,8 @@ class LeagueAPI
 		self::SET_SAVE_DUMMY_DATA  => false,
 		self::SET_VERIFY_SSL       => true,
 		self::SET_DEBUG            => false,
-		self::SET_PER_MINUTE_REQUESTS => 50,
-		self::SET_PER_SECOND_REQUESTS => 20,
+		self::SET_MAX_REQUESTS => 100,
+		self::SET_DURATION_IN_SECONDS => 120,
 	);
 
 	/** @var IRegion $regions */
@@ -444,10 +442,10 @@ class LeagueAPI
 		$middleware = new ThrottleMiddleware(new ArrayAdapter());
 
 		// Max 1 request per second
-		$maxRequests = 1;
-		$durationInSeconds = 2;
+		$maxRequests = $this->getSetting(self::SET_MAX_REQUESTS);
+		$durationInSeconds = $this->getSetting(self::SET_DURATION_IN_SECONDS);
 		$middleware->registerConfiguration(
-			new ThrottleConfiguration(new RequestMatcher(), $maxRequests, $durationInSeconds, 'example')
+			new ThrottleConfiguration(new RequestMatcher(), $maxRequests, $durationInSeconds, 'riotApi')
 		);
 
 		$stack->push($middleware, 'throttle');
