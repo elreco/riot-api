@@ -436,9 +436,10 @@ class LeagueAPI
 		$this->platforms = $custom_platformDataProvider
 			? $custom_platformDataProvider
 			: new Platform();
-
+		
+		// TODO: not working
 		// TODO: Guzzle Client settings?
-		$stack = HandlerStack::create();
+		/* $stack = HandlerStack::create();
 		$middleware = new ThrottleMiddleware(new ArrayAdapter());
 
 		// Max 1 request per second
@@ -447,13 +448,11 @@ class LeagueAPI
 		$middleware->registerConfiguration(
 			new ThrottleConfiguration(new RequestMatcher(), $maxRequests, $durationInSeconds, 'riotApi')
 		);
-
 		$stack->push($middleware, 'throttle');
-		/* $stack->push(RateLimiterMiddleware::perMinute($this->getSetting(self::SET_PER_MINUTE_REQUESTS))); */
 		$this->guzzle = new Client([
 			'handler' => $stack,
-		]);
-
+		]); */
+		$this->guzzle = new Client();
 		$this->_setupDefaultCacheProviderSettings();
 
 		//  Some caching will be made, let's set up cache provider
@@ -1171,8 +1170,11 @@ class LeagueAPI
 			);
 
 			$dummyData_file = $this->_getDummyDataFileName();
-			$requestPromise = $requestPromise->then(function (ResponseInterface $response) use ($url, $requestHash, $dummyData_file) {
+			$requestPromise = $requestPromise->then(function (ResponseInterface $response) use ($url, $requestHash, $dummyData_file,$overrideRegion, $method) {
 				$this->processCallResult($response->getHeaders(), $response->getBody(), $response->getStatusCode());
+				if ($response->getStatusCode() == 429) {
+					$this->makeCall($overrideRegion, $method);
+				}
 				$this->_afterCall($url, $requestHash, $dummyData_file);
 				return $this->getResult();
 			});
@@ -1231,7 +1233,6 @@ class LeagueAPI
 			if (is_array($value) && count($value) == 1)
 				$value = $value[0];
 		});
-
 		$this->result_code     = $response_code;
 		$this->result_headers  = $response_headers;
 		$this->result_data_raw = $response_body;
@@ -1247,7 +1248,11 @@ class LeagueAPI
 			case 500:
 				throw new ServerException('LeagueAPI: Internal server error occured.', $response_code);
 			case 429:
-				throw new ServerLimitException("LeagueAPI: Rate limit for this API key was exceeded. $message", $response_code);
+				echo "RATE LIMIT: ";
+				echo $message . "\n";
+ 				/* throw new ServerLimitException("LeagueAPI: Rate limit for this API key was exceeded. $message", $response_code); */
+				sleep(120);
+				/* $this->processCallResult($response_headers, $response_body, $response_code); */
 			case 415:
 				throw new UnsupportedMediaTypeException("LeagueAPI: Unsupported media type. $message", $response_code);
 			case 404:
